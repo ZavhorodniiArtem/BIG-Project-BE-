@@ -1,22 +1,28 @@
 import PostModel from "../../models/Post";
 import UserModel from "../../models/User";
-import User from "../../models/User";
-import {IUserProfile} from "../../controllers/me/types";
+import {IUserId, IUserProfile} from "../../controllers/me/types";
+import {IPost, IPostWithDoc} from "../../controllers/post/types";
 
 export const postService = {
-  async createNewPost(postData: any, userId: string) {
+  async createNewPost(postData: Omit<IPost, "author">, userId: string) {
     try {
       const user: IUserProfile | null = await UserModel.findById(userId)
 
-      const doc = new PostModel({
+      if (!user) {
+        return {message: "Unable to create post: Server error."}
+      }
+
+      const doc: IPostWithDoc = new PostModel({
         title: postData.title,
         description: postData.description,
         tags: postData.tags,
+        viewsCount: postData.viewsCount,
         author: {
           _id: userId,
-          userName: user?.userName || "user"
+          userName: user.userName || "user"
         },
       });
+
       return await doc.save();
     } catch (error) {
       throw new Error("Unable to create post.");
@@ -34,11 +40,17 @@ export const postService = {
 
   async getOnePost(postId: string) {
     try {
-      return await PostModel.findOneAndUpdate(
+      const post: IPost | null = await PostModel.findOneAndUpdate(
         {_id: postId}, // найти по айди
         {$inc: {viewsCount: 1}}, // изменить поле
         {returnDocument: "after"} // вернуть с изменениями
       )
+
+      if (!post) {
+        return {message: "Unable to create post: Server error."}
+      }
+
+      return post;
     } catch (error) {
       throw new Error("Unable to fetch post.");
     }
@@ -46,20 +58,19 @@ export const postService = {
 
   async getAllTags(limit: number = 5) {
     try {
-      const posts = await PostModel.find().limit(limit).exec();
-      return posts.map((p) => p.tags).flat().slice(0, 5);
+      const posts: IPost[] = await PostModel.find().limit(limit).exec();
+      return posts.map((p: IPost) => p.tags).flat().slice(0, 5);
     } catch (error) {
       throw new Error("Unable to fetch tags.");
     }
   },
 
-  async updateOnePost(postData: any, postId: string) {
+  async updateOnePost(postData: IPost & IUserId, postId: string) {
     try {
       return await PostModel.updateOne({_id: postId}, {
         title: postData.title,
         description: postData.description,
         tags: postData.tags,
-        imageUrl: postData.imageUrl,
         user: postData.userId,
       })
     } catch (error) {

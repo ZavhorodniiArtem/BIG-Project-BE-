@@ -1,10 +1,11 @@
 import mongoose from 'mongoose';
+import {IAuthor, IPost} from "../controllers/post/types";
 
 const Schema = mongoose.Schema
 
-const AuthorSchema = new Schema({
+const AuthorSchema = new Schema<IAuthor>({
   _id: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     required: true,
   },
   userName: {
@@ -12,7 +13,7 @@ const AuthorSchema = new Schema({
   },
 });
 
-const PostSchema = new Schema({
+const PostSchema = new Schema<IPost>({
   title: {
     type: String,
     required: true,
@@ -35,4 +36,4 @@ const PostSchema = new Schema({
   timestamps: true
 })
 
-export default mongoose.model("Posts", PostSchema)
+export default mongoose.model<IPost>("Posts", PostSchema)
