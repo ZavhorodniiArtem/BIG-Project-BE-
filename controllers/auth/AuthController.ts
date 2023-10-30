@@ -1,39 +1,44 @@
-import {Request, Response} from "express";
+import {Response} from "express";
 import {AuthService} from "../../services/auth/authService";
 import {IMessage, IRequest} from "../../general";
 import {IUser} from "./types";
-import {IUserProfile, IWithOutHashPassword} from "../me/types";
+import {IUserProfile, IWithOutHashPassword, TUserProfileWithDoc} from "../me/types";
 
-export const register = async (req: IRequest<IUser>, res: Response<IWithOutHashPassword | null | IMessage>) => {
+export const register = async (req: IRequest<IUser>, res: Response<IWithOutHashPassword | IMessage>) => {
   try {
     const { email, password } = req.body;
-    const userData = await AuthService.register(email, password)
+    const userData: TUserProfileWithDoc = await AuthService.register(email, password)
+
+    if (!userData) {
+      return {message: "Registration failed. Something went wrong."}
+    }
+
     res.json(userData)
   } catch (err) {
     res.status(500).json({message: "Registration failed. Something went wrong."})
   }
 }
 
-export const login = async (req: IRequest<IUser>, res: Response<IUserProfile | {error: string} | IMessage>) => {
+export const login = async (req: IRequest<IUser>, res: Response<IUserProfile | IMessage>) => {
   try {
     const { email, password } = req.body;
-    const result = await AuthService.login(email, password);
+    const result: TUserProfileWithDoc | IMessage = await AuthService.login(email, password);
 
-    if (result.error) {
-      res.status(400).json({ message: result.error });
+    if ("message" in result) {
+      return res.status(400).json(result);
     }
 
-    const {passwordHash, ...data} = result;
+    const {passwordHash, ...data} = result.toObject();
     res.json(data);
   } catch (err) {
     res.status(401).json({message: "Authentication failed"})
   }
 }
 
-export const refreshToken = async (req: Request, res: Response) => {
+export const refreshToken = async (req: IRequest<Pick<IUserProfile, "refreshToken">>, res: Response<IMessage | Pick<IUserProfile, "token">>) => {
   try {
     const { refreshToken } = req.body;
-    const result = await AuthService.refreshToken(refreshToken);
+    const result: IMessage | Pick<IUserProfile, "token"> = await AuthService.refreshToken(refreshToken);
 
     res.json(result);
   } catch (err) {

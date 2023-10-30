@@ -11,7 +11,7 @@ export interface IUserProfile {
   birthday: string | null
   subscription: string | null
   token: string
-  refreshToken?: string
+  refreshToken: string
 }
 
 export type TUserProfileWithDoc = IUserProfile & Document
