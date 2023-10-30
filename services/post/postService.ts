@@ -12,6 +12,9 @@ export const postService = {
         return {message: "Unable to create post: Server error."}
       }
 
+      const indexOfSymbol: number = user.email.indexOf("@");
+      const defaultName: string = user.email.slice(0, indexOfSymbol)
+
       const doc: IPostWithDoc = new PostModel({
         title: postData.title,
         description: postData.description,
@@ -19,7 +22,7 @@ export const postService = {
         viewsCount: postData.viewsCount,
         author: {
           _id: userId,
-          userName: user.userName || "user"
+          userName: user.userName || defaultName
         },
       });
 
